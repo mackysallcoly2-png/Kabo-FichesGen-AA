@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import SheetEditor from './components/SheetEditor';
+import GradientGenerator from './components/GradientGenerator';
 import { PedagogicalSheet } from './types';
 
 const App: React.FC = () => {
@@ -10,7 +11,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem('edu_sheets');
-    if (saved) setSheets(JSON.parse(saved));
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as PedagogicalSheet[];
+        setSheets(parsed);
+      } catch (err) {
+        console.warn('Failed to parse stored sheets, resetting.', err);
+        localStorage.removeItem('edu_sheets');
+      }
+    }
   }, []);
 
   const saveSheets = (updated: PedagogicalSheet[]) => {
@@ -47,6 +56,10 @@ const App: React.FC = () => {
               <Link to="/" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">
                 Mes Fiches
               </Link>
+              <Link to="/gradient" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors flex items-center space-x-2">
+                <i className="fas fa-palette"></i>
+                <span>Dégradés</span>
+              </Link>
               <Link to="/create" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-sm flex items-center space-x-2">
                 <i className="fas fa-plus"></i>
                 <span>Créer</span>
@@ -58,6 +71,7 @@ const App: React.FC = () => {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Dashboard sheets={sheets} onDelete={deleteSheet} />} />
+            <Route path="/gradient" element={<GradientGenerator />} />
             <Route path="/create" element={<SheetEditor onSave={addSheet} />} />
             <Route path="/edit/:id" element={<SheetEditor sheets={sheets} onSave={updateSheet} />} />
           </Routes>
