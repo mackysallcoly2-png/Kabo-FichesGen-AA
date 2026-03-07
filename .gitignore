@@ -25,3 +25,6 @@ dist-ssr
 
 .fake
 KaboFichesGen.exe
+
+release/
+dist-electron/

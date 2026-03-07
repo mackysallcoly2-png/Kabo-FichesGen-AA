@@ -3,13 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "bin": "server.cjs",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "serve": "node server.cjs",
-    "package": "npm run build && npx pkg . --targets node18-win-x64 --public --public-packages=* --output KaboFichesGen.exe"
+    "desktop:build": "npm run build && electron-builder --win portable --x64",
+    "package": "npm run desktop:build"
   },
   "dependencies": {
     "@google/genai": "^1.37.0",
@@ -24,13 +25,32 @@
     "@capacitor/core": "^8.1.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   },
-  "pkg": {
-    "assets": [
+  "build": {
+    "appId": "sn.kabo.fichesgen",
+    "productName": "Kabo FichesGen",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
       "dist/**/*",
+      "electron/**/*",
       "package.json"
-    ]
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "KaboFichesGen-${version}-portable.exe"
+    }
   }
 }
