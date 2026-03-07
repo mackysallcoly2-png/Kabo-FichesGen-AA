@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KaboFichesGen</string>
+    <string name="title_activity_main">KaboFichesGen</string>
+    <string name="package_name">com.kabo.fichesgen</string>
+    <string name="custom_url_scheme">com.kabo.fichesgen</string>
+</resources>

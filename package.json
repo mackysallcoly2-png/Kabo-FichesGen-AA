@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "serve": "node server.js",
-"package": "npm run build && npx pkg server.js --targets node20-win-x64 --public --public-packages=* --output KaboFichesGen.exe"
+    "package": "npm run build && npx pkg server.js --targets node20-win-x64 --public --public-packages=* --output KaboFichesGen.exe"
   },
   "dependencies": {
     "@google/genai": "^1.37.0",
@@ -18,6 +18,9 @@
     "react-router-dom": "^7.12.0"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",

@@ -221,6 +221,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Classe / Niveau</label>
                   <select 
+                    title="Sélectionner le niveau scolaire"
                     className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 outline-none text-sm font-black transition-all"
                     value={formData.gradeLevel}
                     onChange={e => setFormData({...formData, gradeLevel: e.target.value})}
@@ -231,6 +232,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase mb-2 tracking-widest">Langue</label>
                   <select 
+                    title="Sélectionner la langue d'enseignement"
                     className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 outline-none text-sm font-black transition-all"
                     value={formData.language}
                     onChange={e => setFormData({...formData, language: e.target.value})}
@@ -323,6 +325,8 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                         <div className="border-b-8 border-slate-100 pb-6 relative">
                           <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Titre de la séance de travail</label>
                           <input 
+                            title="Titre de la leçon"
+                            placeholder="Saisir le titre de la leçon..."
                             className="text-4xl font-black text-slate-900 w-full outline-none focus:text-indigo-600 bg-transparent transition-all placeholder:text-slate-100"
                             value={sheet.title}
                             onChange={e => setSheet({...sheet, title: e.target.value})}
@@ -332,6 +336,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                           <div className="p-8 bg-slate-50 rounded-[2.5rem] border-4 border-slate-100 shadow-inner transition-all hover:bg-white hover:border-indigo-50">
                             <label className="text-[11px] font-black text-indigo-400 uppercase mb-4 block tracking-widest border-b border-indigo-100 pb-2">Compétence de base (CB)</label>
                             <textarea 
+                              placeholder="Décrire la compétence de base..."
                               className="w-full text-[13px] font-medium text-slate-700 bg-transparent border-none outline-none focus:ring-0 min-h-[140px] leading-relaxed resize-none font-serif italic"
                               value={sheet.competence}
                               onChange={e => setSheet({...sheet, competence: e.target.value})}
@@ -340,6 +345,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                           <div className="p-8 bg-indigo-50/30 rounded-[2.5rem] border-4 border-indigo-100 shadow-inner transition-all hover:bg-white hover:border-indigo-200">
                             <label className="text-[11px] font-black text-indigo-700 uppercase mb-4 block tracking-widest border-b border-indigo-200 pb-2">Objectif Spécifique (OS)</label>
                             <textarea 
+                              placeholder="Décrire l'objectif spécifique..."
                               className="w-full text-sm font-black text-slate-900 bg-transparent border-none outline-none focus:ring-0 min-h-[140px] leading-relaxed resize-none"
                               value={sheet.specificObjective}
                               onChange={e => setSheet({...sheet, specificObjective: e.target.value})}
@@ -367,6 +373,8 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                                    {idx + 1}
                                  </div>
                                  <input 
+                                  title="Nom de l'étape"
+                                  placeholder="Nom de l'étape..."
                                   className="font-black text-indigo-600 bg-transparent border-none focus:ring-0 uppercase w-full text-xl tracking-tight"
                                   value={step.name}
                                   onChange={e => {
@@ -382,6 +390,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                                       <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span> Maître
                                     </label>
                                     <textarea 
+                                      placeholder="Décrire l'activité du maître..."
                                       className="w-full bg-slate-50 border-none rounded-[1.5rem] p-5 text-sm min-h-[180px] focus:ring-4 focus:ring-indigo-50 outline-none leading-relaxed transition-all shadow-inner font-medium text-slate-700"
                                       value={step.teacherActivity}
                                       onChange={e => {
@@ -396,6 +405,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                                       <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span> Élèves
                                     </label>
                                     <textarea 
+                                      placeholder="Décrire l'activité des élèves..."
                                       className="w-full bg-slate-50 border-none rounded-[1.5rem] p-5 text-sm min-h-[180px] focus:ring-4 focus:ring-emerald-50 outline-none leading-relaxed transition-all shadow-inner font-medium text-slate-700"
                                       value={step.studentActivity}
                                       onChange={e => {
