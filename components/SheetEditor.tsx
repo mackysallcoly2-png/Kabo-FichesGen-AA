@@ -17,6 +17,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   
   const [formData, setFormData] = useState<GenerationRequest & { type: SheetType }>({
@@ -28,6 +29,51 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
   });
 
   const [sheet, setSheet] = useState<PedagogicalSheet | null>(null);
+  const [autoSaveActive, setAutoSaveActive] = useState(false);
+
+  const isArabicContent = (text: string) => /[\u0600-\u06FF]/.test(text);
+  const editorDir = formData.language === 'Arabe' || (sheet && isArabicContent(sheet.title)) ? 'rtl' : 'ltr';
+
+  // Chargement du brouillon au montage
+  useEffect(() => {
+    if (!id) {
+      const savedForm = localStorage.getItem('kabo_draft_form');
+      const savedSheet = localStorage.getItem('kabo_draft_sheet');
+      
+      if (savedForm) {
+        try {
+          setFormData(JSON.parse(savedForm));
+        } catch (e) {
+          console.error("Erreur chargement brouillon form", e);
+        }
+      }
+      
+      if (savedSheet) {
+        try {
+          setSheet(JSON.parse(savedSheet));
+        } catch (e) {
+          console.error("Erreur chargement brouillon sheet", e);
+        }
+      }
+    }
+  }, [id]);
+
+  // Auto-save périodique et sur changement (Debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!id) {
+        localStorage.setItem('kabo_draft_form', JSON.stringify(formData));
+        if (sheet) {
+          localStorage.setItem('kabo_draft_sheet', JSON.stringify(sheet));
+        }
+        
+        setAutoSaveActive(true);
+        setTimeout(() => setAutoSaveActive(false), 2000);
+      }
+    }, 2000); // Sauvegarde après 2 secondes d'inactivité
+
+    return () => clearTimeout(timer);
+  }, [formData, sheet, id]);
 
   useEffect(() => {
     if (id) {
@@ -47,18 +93,19 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
 
   const handleGenerate = async () => {
     if (!formData.activity || !formData.topic) {
-      alert("Précisez l'activité et le titre pour interroger le guide.");
+      setError("Précisez l'activité et le titre pour interroger le guide.");
       return;
     }
 
     setLoading(true);
+    setError(null);
     try {
       const generated = await generatePedagogicalSheet(formData);
       setSheet({ ...generated, type: formData.type });
       setViewMode('preview');
     } catch (error: any) {
       console.error(error);
-      alert(error.message || "Erreur de connexion au guide pédagogique IA.");
+      setError(error.message || "Erreur de connexion au guide pédagogique IA.");
     } finally {
       setLoading(false);
     }
@@ -68,6 +115,9 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
     if (sheet) {
       onSave(sheet);
       setSaveSuccess(true);
+      // Nettoyage du brouillon après sauvegarde officielle
+      localStorage.removeItem('kabo_draft_form');
+      localStorage.removeItem('kabo_draft_sheet');
       setTimeout(() => {
         setSaveSuccess(false);
         navigate('/');
@@ -100,23 +150,45 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
     setPdfLoading(true);
     try {
       const element = previewRef.current;
+      
+      // Sauvegarde du style original
+      const originalStyle = element.style.width;
+      const originalMaxW = element.style.maxWidth;
+      
+      // Force le format A4 (210mm) pour la capture
+      element.style.width = '210mm';
+      element.style.maxWidth = 'none';
+
       const opt = {
-        margin: [0, 0, 0, 0],
+        margin: [10, 10, 10, 10], // Marges standard de 10mm
         filename: `CEB_SENEGAL_${sheet.gradeLevel}_${sheet.title.replace(/\s+/g, '_')}.pdf`,
-        image: { type: 'jpeg', quality: 1.0 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       const html2pdfLib = (window as any).html2pdf;
       if (typeof html2pdfLib === 'function') {
+        // Utilisation du worker pour plus de stabilité
         await html2pdfLib().set(opt).from(element).save();
+        
+        // Restauration du style
+        element.style.width = originalStyle;
+        element.style.maxWidth = originalMaxW;
       } else {
         throw new Error("html2pdf non disponible.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Échec de l'export. Utilisez l'impression PDF.");
+      setError("Échec de l'export. Utilisez l'impression système (Ctrl+P).");
     } finally {
       setPdfLoading(false);
     }
@@ -136,10 +208,35 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {autoSaveActive && (
+        <div className="fixed bottom-8 left-8 z-[100] bg-slate-800/90 backdrop-blur text-white px-4 py-2 rounded-full shadow-xl flex items-center space-x-2 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+          <span className="text-[10px] font-black uppercase tracking-widest">Brouillon enregistré</span>
+        </div>
+      )}
+
       {saveSuccess && (
         <div className="fixed top-20 right-4 z-[100] bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center space-x-3 animate-bounce">
           <i className="fas fa-check-circle text-xl"></i>
           <span className="font-bold">Fiche archivée !</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl border-b-8 border-rose-600 animate-in zoom-in duration-300">
+            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <i className="fas fa-circle-exclamation text-2xl"></i>
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 text-center mb-2">Attention</h3>
+            <p className="text-slate-500 text-center mb-8">{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all"
+            >
+              Compris
+            </button>
+          </div>
         </div>
       )}
 
@@ -200,6 +297,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                     className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 outline-none text-sm font-bold transition-all"
                     value={formData.activity}
                     onChange={e => setFormData({...formData, activity: e.target.value})}
+                    dir={formData.language === 'Arabe' ? 'rtl' : 'ltr'}
                   />
                 </div>
 
@@ -213,6 +311,7 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                     className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600 outline-none text-sm font-bold transition-all"
                     value={formData.topic}
                     onChange={e => setFormData({...formData, topic: e.target.value})}
+                    dir={formData.language === 'Arabe' ? 'rtl' : 'ltr'}
                   />
                 </div>
               </div>
@@ -259,6 +358,33 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
                   </>
                 )}
               </button>
+
+              <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Aide Curriculaire (CEB)</p>
+                <div className="space-y-2">
+                  <details className="group">
+                    <summary className="text-[10px] font-bold text-slate-600 cursor-pointer list-none flex items-center justify-between">
+                      <span>Langue & Comm.</span>
+                      <i className="fas fa-chevron-down text-[8px] group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p className="text-[9px] text-slate-400 mt-1 pl-2">Com. Orale, Lecture, Écriture, Grammaire, Orthographe...</p>
+                  </details>
+                  <details className="group">
+                    <summary className="text-[10px] font-bold text-slate-600 cursor-pointer list-none flex items-center justify-between">
+                      <span>Mathématiques</span>
+                      <i className="fas fa-chevron-down text-[8px] group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p className="text-[9px] text-slate-400 mt-1 pl-2">Activités Numériques, Géométrie, Mesure, Résolution de Prob.</p>
+                  </details>
+                  <details className="group">
+                    <summary className="text-[10px] font-bold text-slate-600 cursor-pointer list-none flex items-center justify-between">
+                      <span>ESVS / EDD</span>
+                      <i className="fas fa-chevron-down text-[8px] group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <p className="text-[9px] text-slate-400 mt-1 pl-2">Histoire, Géo, IST, Vivre ensemble, Vivre dans son milieu.</p>
+                  </details>
+                </div>
+              </div>
             </div>
 
             {sheet && (
@@ -288,9 +414,9 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
               <div className="w-40 h-40 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-10 border-8 border-white shadow-inner group-hover:scale-110 transition-transform duration-700">
                 <i className="fas fa-book-reader text-6xl"></i>
               </div>
-              <h3 className="text-4xl font-black text-slate-900 mb-6 leading-tight">Moteur Curriculaire CEB</h3>
+              <h3 className="text-4xl font-black text-slate-900 mb-6 leading-tight">Moteur Curriculaire KABO AI</h3>
               <p className="text-slate-400 max-w-md text-center leading-relaxed font-bold text-lg">
-                Kabo Gen possède l'intégralité du Guide Pédagogique du Sénégal. 
+                KABO GenFiches AI 2.0 possède l'intégralité du Guide Pédagogique du Sénégal. 
                 <span className="text-indigo-500 block mt-4">Saisissez n'importe quelle leçon pour commencer la déclinaison automatique.</span>
               </p>
               <div className="mt-12 flex gap-4">
@@ -318,7 +444,13 @@ const SheetEditor: React.FC<SheetEditorProps> = ({ sheets = [], onSave }) => {
               
               <div className="bg-white border-2 border-slate-100 rounded-[3rem] shadow-2xl overflow-hidden min-h-[1000px]">
                 {viewMode === 'edit' ? (
-                  <div className="p-12 space-y-12" dir={/^[A-Za-z0-9\s]*$/.test(sheet.title) ? 'ltr' : 'rtl'}>
+                  <div className="p-12 space-y-12" dir={editorDir}>
+                     {sheet && (
+                       <div className="flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full w-fit mb-6 border border-emerald-100 animate-pulse">
+                         <i className="fas fa-certificate text-sm"></i>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Conforme au Guide Pédagogique CEB Sénégal</span>
+                       </div>
+                     )}
                      <div className="space-y-10">
                         <div className="border-b-8 border-slate-100 pb-6 relative">
                           <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 block">Titre de la séance de travail</label>

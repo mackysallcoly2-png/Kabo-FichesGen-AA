@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import SheetEditor from './components/SheetEditor';
-import GradientGenerator from './components/GradientGenerator';
 import { PedagogicalSheet } from './types';
 
 const App: React.FC = () => {
@@ -11,15 +10,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem('edu_sheets');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as PedagogicalSheet[];
-        setSheets(parsed);
-      } catch (err) {
-        console.warn('Failed to parse stored sheets, resetting.', err);
-        localStorage.removeItem('edu_sheets');
-      }
-    }
+    if (saved) setSheets(JSON.parse(saved));
   }, []);
 
   const saveSheets = (updated: PedagogicalSheet[]) => {
@@ -49,16 +40,12 @@ const App: React.FC = () => {
                 <i className="fas fa-graduation-cap text-xl"></i>
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
-                Kabo FichesGen
+                KABO GenFiches AI 2.0
               </span>
             </Link>
             <nav className="flex items-center space-x-6">
               <Link to="/" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors">
                 Mes Fiches
-              </Link>
-              <Link to="/gradient" className="text-slate-600 hover:text-indigo-600 font-medium transition-colors flex items-center space-x-2">
-                <i className="fas fa-palette"></i>
-                <span>Dégradés</span>
               </Link>
               <Link to="/create" className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-sm flex items-center space-x-2">
                 <i className="fas fa-plus"></i>
@@ -71,7 +58,6 @@ const App: React.FC = () => {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Dashboard sheets={sheets} onDelete={deleteSheet} />} />
-            <Route path="/gradient" element={<GradientGenerator />} />
             <Route path="/create" element={<SheetEditor onSave={addSheet} />} />
             <Route path="/edit/:id" element={<SheetEditor sheets={sheets} onSave={updateSheet} />} />
           </Routes>
@@ -80,7 +66,7 @@ const App: React.FC = () => {
         <footer className="bg-white border-t border-slate-200 py-8 no-print">
           <div className="max-w-7xl mx-auto px-4 text-center">
             <p className="text-slate-500 text-sm">
-              &copy; {new Date().getFullYear()} Kabo FichesGen. Conçu pour faciliter la vie des enseignants.
+              &copy; {new Date().getFullYear()} KABO GenFiches AI 2.0. Conçu pour faciliter la vie des enseignants.
             </p>
           </div>
         </footer>

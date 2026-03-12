@@ -7,12 +7,21 @@ interface SheetPreviewProps {
 }
 
 const SheetPreview: React.FC<SheetPreviewProps> = ({ sheet }) => {
-  const isArabic = /[\u0600-\u06FF]/.test(sheet.title) || /[\u0600-\u06FF]/.test(sheet.competence);
+  const isArabic = /[\u0600-\u06FF]/.test(sheet.title) || /[\u0600-\u06FF]/.test(sheet.competence) || /[\u0600-\u06FF]/.test(sheet.oa);
   const dir = isArabic ? 'rtl' : 'ltr';
   const textAlign = isArabic ? 'text-right' : 'text-left';
+  const fontFamily = isArabic ? "'Amiri', 'Traditional Arabic', serif" : "'Inter', sans-serif";
 
   return (
-    <div className="sheet-container bg-white p-10 print:p-0 text-slate-900 font-sans min-h-[1080px] flex flex-col" dir={dir}>
+    <div 
+      className="sheet-container bg-white p-8 print:p-0 text-slate-900 min-h-[1080px] flex flex-col mx-auto" 
+      dir={dir} 
+      style={{ 
+        width: '100%', 
+        maxWidth: '210mm',
+        fontFamily: fontFamily
+      }}
+    >
       {/* En-tête Institutionnel Premium */}
       <div className={`flex justify-between items-center border-b-4 border-black pb-4 mb-6 ${isArabic ? 'flex-row-reverse' : ''}`}>
         <div className={`text-[10px] font-bold uppercase space-y-1 ${textAlign} w-1/3`}>
@@ -113,7 +122,7 @@ const SheetPreview: React.FC<SheetPreviewProps> = ({ sheet }) => {
           </thead>
           <tbody>
             {sheet.steps.map((step, idx) => (
-              <tr key={idx} className="align-top border-b-2 border-black group">
+              <tr key={idx} className="align-top border-b-2 border-black group break-inside-avoid">
                 <td className={`p-3 font-black uppercase text-[10px] bg-slate-50 print:bg-transparent border-r-2 border-black ${textAlign}`}>
                   {step.name}
                 </td>
@@ -154,7 +163,7 @@ const SheetPreview: React.FC<SheetPreviewProps> = ({ sheet }) => {
       </div>
 
       <footer className="mt-auto pt-6 text-center text-[8px] text-slate-400 font-black uppercase tracking-[0.3em] no-print border-t border-slate-100">
-        Kabo FichesGen Premium v2.5 • Le Guide Pédagogique Numérique du Sénégal
+        KABO GenFiches AI 2.0 • Le Guide Pédagogique Numérique du Sénégal
       </footer>
     </div>
   );

@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GenerationRequest, SheetType } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const cleanJsonString = (str: string): string => {
   const jsonMatch = str.match(/\{[\s\S]*\}/);
@@ -12,43 +12,55 @@ const cleanJsonString = (str: string): string => {
 export const generatePedagogicalSheet = async (request: GenerationRequest & { type?: SheetType }) => {
   const { activity, gradeLevel, topic, language, type = SheetType.LESSON } = request;
 
-  const systemInstruction = `Tu es l'Expert de référence du Ministère de l'Éducation Nationale du Sénégal. Tu maîtrises parfaitement le Guide Pédagogique du CEB pour TOUTES les classes (CI, CP, CE1, CE2, CM1, CM2) et TOUTES les disciplines.
+  const systemInstruction = `Tu es l'Expert de référence du Ministère de l'Éducation Nationale du Sénégal, propulsé par KABO GenFiches AI 2.0. Tu es spécialisé dans l'Approche Par les Compétences (APC). Tu maîtrises l'intégralité du Guide Pédagogique du CEB (Curriculum de l'Éducation de Base) pour tous les cycles :
+  - Cycle Fondamental 1 (CI, CP)
+  - Cycle Fondamental 2 (CE1, CE2)
+  - Cycle Fondamental 3 (CM1, CM2)
 
-  CONTEXTE DE RÉFÉRENCE (CEB SÉNÉGAL) :
-  1. LANGUE ET COMMUNICATION (LC) : Communication Orale, Lecture, Écriture, Production d'écrits, Grammaire, Conjugaison, Orthographe, Vocabulaire.
-  2. MATHÉMATIQUES : Activités Numériques, Géométrie, Mesure, Résolution de problèmes.
-  3. ESVS : Histoire, Géographie, Initiation Scientifique et Technologique.
-  4. EDD (Éducation au Développement Durable) : Vivre Ensemble, Vivre dans son Milieu.
-  5. ARTS & SPORTS : Arts Plastiques, Éducation Musicale, EPS.
-  6. FRANCO-ARABE : Tawhid, Fiqh, Sirah, Hadith, Coran (Hifz/Tajwid), Langue Arabe (Nahw, Sarf, Imla, Incha).
-  7. ANGLAIS : Initiation à l'anglais oral et écrit.
+  RÈGLES D'OR DU CURRICULUM SÉNÉGALAIS :
+  1. FIDÉLITÉ ABSOLUE : Tu dois utiliser les libellés EXACTS des Compétences de Base (CB) et des Objectifs d'Apprentissage (OA) tels qu'écrits dans les guides officiels.
+  2. DÉCLINAISON PRÉCISE : Pour chaque leçon, identifie sans erreur :
+     - Le DOMAINE (ex: Langue et Communication)
+     - Le SOUS-DOMAINE (ex: Communication Écrite)
+     - L'ACTIVITÉ (ex: Lecture)
+     - La COMPÉTENCE DE BASE (CB) liée au palier.
+     - Le PALIER de compétence.
+     - L'OBJECTIF D'APPRENTISSAGE (OA) spécifique à la leçon.
+  3. OBJECTIF SPÉCIFIQUE (OS) : Il doit être formulé selon la norme (Comportement observable + Conditions + Critères de réussite).
+  4. CONTENUS : Les contenus doivent respecter la progression officielle du Sénégal.
 
-  TA MISSION :
-  - Décliner avec précision le DOMAINE, SOUS-DOMAINE, CB, PALIER et OA conformément au guide pour le niveau ${gradeLevel}.
-  - Enrichir le vocabulaire pédagogique : utilise des termes comme "matérialisation", "confrontation", "validation", "institutionnalisation".
-  - Résumé adapté : Pour un ${gradeLevel}, le résumé doit être calibré (CI/CP = 1 phrase simple ; CM = Synthèse structurée).
+  DOMAINES DE RÉFÉRENCE :
+  - LC (Langue et Communication) : Communication Orale, Lecture, Écriture, Production d'écrits, Grammaire, Conjugaison, Orthographe, Vocabulaire.
+  - MATHS : Activités Numériques, Géométrie, Mesure, Résolution de problèmes.
+  - ESVS : Histoire, Géographie, IST.
+  - EDD : Vivre Ensemble, Vivre dans son Milieu.
+  - ARTS & SPORTS : Arts Plastiques, Musique, EPS.
+  - FRANCO-ARABE : Tawhid, Fiqh, Sirah, Hadith, Coran, Langue Arabe (Nahw, Sarf, Imla, Incha).
 
-  STRUCTURE DE LA FICHE (MODÈLE APC OFFICIEL) :
-  - Mise en train : Rappel de pré-requis ou jeu éducatif.
-  - Mise en situation : Situation-problème contextualisée au Sénégal (lieux, prénoms locaux).
-  - Construction des connaissances : Démarche active (Observation -> Hypothèses -> Vérification -> Synthèse).
-  - Évaluation : Exercice d'application immédiate de l'OS.
+  STRUCTURE APC :
+  - Mise en train : Rappel/Jeu.
+  - Mise en situation : Situation-problème contextualisée (Sénégal).
+  - Construction : Observation -> Hypothèses -> Vérification -> Institutionnalisation.
+  - Évaluation : Item de vérification de l'OS.
+
+  IMPORTANT (LANGUE ARABE) :
+  - Si la langue demandée est l'Arabe, TOUT le contenu généré doit être en Arabe littéraire correct, en utilisant la terminologie pédagogique officielle des écoles franco-arabes du Sénégal.
 
   RETOURNE EXCLUSIVEMENT DU JSON.`;
 
-  const prompt = `Génère une fiche de préparation complète pour :
+  const prompt = `En tant qu'expert du CEB Sénégal, génère la fiche pédagogique officielle pour :
   Niveau : "${gradeLevel}"
-  Discipline/Activité : "${activity}"
-  Titre de la leçon : "${topic}"
+  Activité : "${activity}"
+  Titre : "${topic}"
   Type : "${type}"
-  Langue de rédaction : "${language}"
+  Langue : "${language}"
   
-  Assure-toi que tout le contenu (titres, activités, résumé) est rédigé en "${language}".`;
+  VÉRIFICATION CURRICULAIRE : Assure-toi que la CB, le Palier et l'OA correspondent exactement au guide pédagogique sénégalais pour le niveau ${gradeLevel}.`;
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
+      model: 'gemini-3.1-pro-preview',
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
         systemInstruction,
         responseMimeType: "application/json",
